@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { 
   FaArrowLeft,
@@ -15,14 +15,16 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../AuthContext"; // Import the AuthContext
 
 const ForgetPassword = () => {
   const navigate = useNavigate();
+  const { forgotPassword, loading, error, clearError } = useAuth(); // Get auth context functions
   const [formData, setFormData] = useState({
     email: "",
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false); // Local loading state
 
   // Animation variants
   const containerVariants = {
@@ -47,6 +49,11 @@ const ForgetPassword = () => {
       }
     }
   };
+
+  // Clear auth error when component mounts or when form changes
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -86,30 +93,56 @@ const ForgetPassword = () => {
     }
 
     setErrors({});
-    setIsLoading(true);
+    clearError();
+    setLocalLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    
-    // Show success toast
-    toast.success("Reset link sent to your email! Check your inbox.", {
-      position: "top-right",
-      autoClose: 4000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: "colored",
-      style: {
-        background: '#059669',
-        color: 'white'
+    try {
+      // Use the forgotPassword function from AuthContext
+      const response = await forgotPassword(formData.email);
+
+      if (response) {
+        toast.success("Reset link sent to your email! Check your inbox.", {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+          style: {
+            background: '#059669',
+            color: 'white'
+          }
+        });
+
+        // Reset form
+        setFormData({ email: "" });
+        
+        // Navigate to confirmation page or back to login after delay
+        setTimeout(() => {
+          navigate("/signin");
+        }, 4000);
       }
-    });
-
-    // Reset form
-    setFormData({ email: "" });
+    } catch (err) {
+      // Error is already handled in the AuthContext, but we can show a toast here too
+      const errorMessage = error || err.message || "Failed to send reset email";
+      
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: {
+          background: '#dc2626',
+          color: 'white'
+        }
+      });
+    } finally {
+      setLocalLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -124,6 +157,11 @@ const ForgetPassword = () => {
         ...prev,
         [name]: ""
       }));
+    }
+    
+    // Clear auth error when user starts typing
+    if (error) {
+      clearError();
     }
   };
 
@@ -151,7 +189,7 @@ const ForgetPassword = () => {
       {/* Back to home link */}
       <Link 
         to="/"
-        className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center  transition-colors duration-200 group z-10"
+        className="absolute top-3 left-3 sm:top-4 sm:left-4 flex items-center text-black transition-colors duration-200 group z-10"
       >
         <motion.div
           initial={{ opacity: 0, x: -5 }}
@@ -218,11 +256,27 @@ const ForgetPassword = () => {
                 ))}
               </div>
 
+              {/* Show error from auth context */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 p-2 bg-red-500/20 border border-red-500/30 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <FaShieldAlt className="text-red-300 text-xs" />
+                    <p className="text-red-200 text-[10px]">
+                      {error}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Back to sign in link */}
               <div className="mt-auto pt-4">
                 <Link
                   to="/signin"
-                  className="block text-center text-xs text-blue-200 hover:text-white transition-colors duration-200 hover:underline"
+                  className="block text-center text-xs text-black transition-colors duration-200 hover:underline"
                 >
                   Back to Sign In
                 </Link>
@@ -320,14 +374,14 @@ const ForgetPassword = () => {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   type="submit"
-                  disabled={isLoading}
+                  disabled={localLoading || loading}
                   className={`w-full py-2 px-3 bg-gradient-to-r from-[#1a365d] to-[#344F9F] text-white font-semibold rounded-md transition-all duration-200 text-xs hover:shadow-sm whitespace-nowrap ${
-                    isLoading
+                    (localLoading || loading)
                       ? "opacity-90 cursor-not-allowed"
                       : "hover:from-[#344F9F] hover:to-[#1a365d]"
                   }`}
                 >
-                  {isLoading ? (
+                  {(localLoading || loading) ? (
                     <div className="flex items-center justify-center gap-1.5">
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                       <span>Sending Link...</span>

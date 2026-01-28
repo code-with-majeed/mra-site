@@ -37,8 +37,18 @@ const Administrations = () => {
 
   return (
     <div className="bg-gray-100 p-4 md:p-6 min-h-screen animate-fadeIn">
+      {/* Professional heading with animated underline */}
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 relative inline-block group">
+          Administration
+          {/* Professional underline - always visible with hover effect */}
+          <span className="absolute -bottom-1 left-0 w-0 h-1 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+          {/* Static underline base */}
+          <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gray-200"></span>
+        </h2>
+      </div>
+
       <div className="bg-white rounded-lg shadow-lg transition-all duration-300 hover:shadow-xl">
-        
         {/* Tabs */}
         <div className="flex animate-slideDown">
           <button 

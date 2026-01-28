@@ -28,6 +28,17 @@ const CardHeader = ({ title, icon: Icon, color }) => (
 const Accounts = () => {
   return (
     <div className="bg-gray-100 min-h-screen p-3 sm:p-4 md:p-6 flex flex-col gap-4 md:gap-6 overflow-hidden animate-fadeIn">
+      {/* Professional heading with animated underline */}
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 relative inline-block group">
+          Accounts
+          {/* Professional underline - always visible with hover effect */}
+          <span className="absolute -bottom-1 left-0 w-0 h-1 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+          {/* Static underline base */}
+          <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gray-200"></span>
+        </h2>
+      </div>
+
       {/* Top Bar */}
       <div className="bg-white border rounded-md p-3 sm:p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-slideDown">
         <h2 className="text-base sm:text-lg font-semibold text-gray-800">
@@ -212,7 +223,7 @@ const Accounts = () => {
         ))}
       </div>
       {/* ================= END SUMMARY ================= */}
-      
+
       {/* Add CSS animations and hide scrollbar */}
       <style jsx>{`
         @keyframes fadeIn {

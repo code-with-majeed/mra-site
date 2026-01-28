@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { 
   FaArrowLeft,
@@ -7,15 +7,19 @@ import {
   FaCheckCircle,
   FaEye,
   FaEyeSlash,
-  FaShieldAlt
+  FaShieldAlt,
+  FaSync,
+  FaExclamationTriangle
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "./AuthContext"; // Import the AuthContext
 
 const ResetPassword = () => {
   const { token } = useParams();
   const navigate = useNavigate();
+  const { resetPassword, forgotPassword, loading, error, clearError } = useAuth(); // Get auth context functions
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,7 +27,20 @@ const ResetPassword = () => {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [storedEmail, setStoredEmail] = useState("");
+
+  useEffect(() => {
+    // Get stored email when component mounts
+    const email = localStorage.getItem("resetEmail");
+    if (email) {
+      setStoredEmail(email);
+    }
+    
+    // Clear any existing auth errors
+    clearError();
+  }, [clearError]);
 
   // Animation variants
   const containerVariants = {
@@ -94,33 +111,140 @@ const ResetPassword = () => {
     }
 
     setErrors({});
-    setIsLoading(true);
+    clearError();
+    setLocalLoading(true);
 
-    // Simulate API call with token
-    console.log("Resetting password with token:", token);
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    
-    // Show success toast
-    toast.success("Password reset successfully! Redirecting to login...", {
-      position: "top-right",
-      autoClose: 3000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: "colored",
-      style: {
-        background: '#059669',
-        color: 'white'
+    try {
+      // Use the resetPassword function from AuthContext
+      const response = await resetPassword(token, formData.password, formData.confirmPassword);
+
+      if (response) {
+        toast.success("Password reset successfully! Redirecting to login...", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+          style: {
+            background: '#059669',
+            color: 'white'
+          }
+        });
+
+        // Clear stored email
+        localStorage.removeItem("resetEmail");
+        
+        // Wait for toast to show, then navigate
+        setTimeout(() => {
+          navigate("/signin");
+        }, 3000);
       }
-    });
+    } catch (err) {
+      console.error("Reset password error:", err);
+      
+      let errorMessage = error || err.message || "Failed to reset password. Please try again.";
+      
+      if (err.response) {
+        if (err.response.status === 400 || err.response.status === 401) {
+          errorMessage = "Invalid or expired reset link. Please request a new one.";
+          
+          toast.info("Your reset link may have expired. Try resending the email.", {
+            position: "top-center",
+            autoClose: 6000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            theme: "colored",
+            style: {
+              background: '#3b82f6',
+              color: 'white'
+            }
+          });
+        }
+      }
+      
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: {
+          background: '#dc2626',
+          color: 'white'
+        }
+      });
+    } finally {
+      setLocalLoading(false);
+    }
+  };
 
-    // Wait for toast to show, then navigate
-    setTimeout(() => {
-      navigate("/signin");
-    }, 3000);
+  const handleResendEmail = async () => {
+    if (!storedEmail) {
+      toast.info("Please request a new password reset from the sign-in page.", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: {
+          background: '#3b82f6',
+          color: 'white'
+        }
+      });
+      return;
+    }
+
+    setIsResending(true);
+    clearError();
+    
+    try {
+      // Use the forgotPassword function from AuthContext for resending
+      const response = await forgotPassword(storedEmail);
+
+      if (response) {
+        toast.success("Reset link sent to your email!", {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+          style: {
+            background: '#059669',
+            color: 'white'
+          }
+        });
+      }
+    } catch (err) {
+      console.error("Resend email error:", err);
+      
+      let errorMessage = error || err.message || "Failed to resend reset link. Please try again.";
+      
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: {
+          background: '#dc2626',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsResending(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -135,6 +259,11 @@ const ResetPassword = () => {
         ...prev,
         [name]: ""
       }));
+    }
+    
+    // Clear auth error when user starts typing
+    if (error) {
+      clearError();
     }
   };
 
@@ -175,7 +304,7 @@ const ResetPassword = () => {
         </motion.div>
       </Link>
 
-      {/* Main container - Same compact size as sign-in */}
+      {/* Main container */}
       <div className="container mx-auto px-3 min-h-screen flex items-center justify-center py-2">
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
@@ -212,6 +341,22 @@ const ResetPassword = () => {
                 </p>
               </div>
 
+              {/* Show error from auth context */}
+              {error && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-3 p-2 bg-red-500/20 border border-red-500/30 rounded-md"
+                >
+                  <div className="flex items-center gap-2">
+                    <FaExclamationTriangle className="text-red-300 text-xs" />
+                    <p className="text-red-200 text-[10px]">
+                      {error}
+                    </p>
+                  </div>
+                </motion.div>
+              )}
+
               {/* Security Tips */}
               <div className="space-y-2 mt-2">
                 {[
@@ -228,6 +373,39 @@ const ResetPassword = () => {
                   </div>
                 ))}
               </div>
+
+              {/* Resend Link Button */}
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleResendEmail}
+                disabled={isResending || !storedEmail}
+                className="mt-4 flex items-center justify-center gap-2 bg-white/10 hover:bg-white/20 backdrop-blur-sm text-white text-xs py-2 px-3 rounded-md transition-all duration-200 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isResending ? (
+                  <>
+                    <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    Sending...
+                  </>
+                ) : (
+                  <>
+                    <FaSync className="text-[10px]" />
+                    Resend Reset Link
+                  </>
+                )}
+              </motion.button>
+
+              {/* Warning if no email stored */}
+              {!storedEmail && (
+                <div className="mt-3 p-2 bg-yellow-500/20 border border-yellow-500/30 rounded-md">
+                  <div className="flex items-center gap-2">
+                    <FaExclamationTriangle className="text-yellow-300 text-xs" />
+                    <p className="text-yellow-200 text-[10px]">
+                      Email not found. Please request a new reset.
+                    </p>
+                  </div>
+                </div>
+              )}
 
               {/* Back to sign in link */}
               <div className="mt-auto pt-4">
@@ -381,14 +559,14 @@ const ResetPassword = () => {
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   type="submit"
-                  disabled={isLoading}
+                  disabled={localLoading || loading}
                   className={`w-full py-2 px-4 bg-gradient-to-r from-[#1a365d] to-[#344F9F] text-white font-semibold rounded-md transition-all duration-200 text-xs hover:shadow-sm ${
-                    isLoading
+                    (localLoading || loading)
                       ? "opacity-90 cursor-not-allowed"
                       : "hover:from-[#344F9F] hover:to-[#1a365d]"
                   }`}
                 >
-                  {isLoading ? (
+                  {(localLoading || loading) ? (
                     <div className="flex items-center justify-center">
                       <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1.5"></div>
                       Resetting Password...

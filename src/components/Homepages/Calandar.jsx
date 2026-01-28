@@ -141,6 +141,15 @@ const Calendar = () => {
       category: "Sports",
       duration: "5 Days",
       location: "Sports Complex"
+    },
+    {
+      id: 7,
+      img: "/src/assets/img-3.jpg",
+      desc: "Annual Sports Tournament and Athletic Championships",
+      date: "Jun 18, 2025",
+      category: "Sports",
+      duration: "5 Days",
+      location: "Sports Complex"
     }
   ];
 

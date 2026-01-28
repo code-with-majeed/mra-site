@@ -6,26 +6,21 @@ import {
   FaEnvelope, 
   FaLock, 
   FaArrowLeft,
-  FaUniversity,
   FaUserPlus,
   FaSignature,
   FaPhone,
   FaBuilding,
   FaMapMarkerAlt,
-  FaCheckCircle,
-  FaBook,
-  FaChartLine,
-  FaUsers,
-  FaCalendarAlt,
-  FaGraduationCap,
-  FaUserTie
+  FaCheckCircle
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAuth } from "../AuthContext"; // Adjust path as needed
 
 const SignUp = () => {
   const navigate = useNavigate();
+  const { signup, loading: authLoading, error: authError } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
@@ -145,30 +140,81 @@ const SignUp = () => {
     setErrors({});
     setIsLoading(true);
 
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsLoading(false);
-    
-    // Show success toast
-    toast.success("Account created successfully! Redirecting...", {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      theme: "colored",
-      style: {
-        background: '#059669',
-        color: 'white'
-      }
-    });
+    try {
+      // Prepare data exactly as backend expects
+      const signupData = {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+        confirmPassword: formData.confirmPassword, // Backend needs this
+        phone: formData.phone,
+        companyName: formData.companyName,
+        address: formData.address,
+      };
 
-    // Wait for toast to show, then navigate
-    setTimeout(() => {
-      navigate("/dashboard");
-    }, 2000);
+      // Call the signup function from AuthContext
+      const result = await signup(signupData);
+      
+      if (result.success) {
+        // Show success toast with backend message
+        toast.success(result.message || "Account created successfully!", {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+          style: {
+            background: '#059669',
+            color: 'white'
+          }
+        });
+
+        // Optional: You can store user data in context if needed
+        // The backend returns user and agency data in result.data
+        
+        // Navigate to signin page after successful signup
+        setTimeout(() => {
+          navigate("/signin");
+        }, 2000);
+      } else {
+        // Show error from backend
+        toast.error(result.message || "Signup failed", {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          theme: "colored",
+          style: {
+            background: '#dc2626',
+            color: 'white'
+          }
+        });
+      }
+
+    } catch (error) {
+      // Error is already set in AuthContext, but you can show it here too
+      const errorMessage = authError || error.message || "Signup failed";
+      
+      toast.error(errorMessage, {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        theme: "colored",
+        style: {
+          background: '#dc2626',
+          color: 'white'
+        }
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleChange = (e) => {
@@ -177,7 +223,7 @@ const SignUp = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -187,7 +233,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="min-h-screen  bg-gray-200 relative overflow-hidden">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 relative overflow-hidden">
       {/* Toast Container */}
       <ToastContainer
         position="top-right"
@@ -223,104 +269,51 @@ const SignUp = () => {
         </motion.div>
       </Link>
 
-      {/* Main container - Same compact size as sign-in */}
-      <div className="container mx-auto px-3 min-h-screen flex items-center mt-10 justify-center py-2">
+      {/* Main container */}
+      <div className="container mx-auto px-3 min-h-screen flex items-center justify-center py-4">
         <motion.div 
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.4 }}
           className="w-full max-w-md"
         >
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 bg-white/95 backdrop-blur-sm rounded-xl lg:rounded-2xl shadow-xl overflow-hidden border border-white/20">
+          <div className="bg-white/90 backdrop-blur-sm rounded-2xl shadow-2xl overflow-hidden border border-white/30">
             
-            {/* Left Column - Brand Section */}
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.4 }}
-              className="relative bg-gradient-to-br from-[#1a365d] via-[#344F9F] to-blue-800 p-4 lg:p-5 flex flex-col"
-            >
-              {/* University Branding */}
-              <div className="mb-4 mt-2">
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="bg-white/10 backdrop-blur-sm w-10 h-10 rounded-lg flex items-center justify-center">
-                    <FaUniversity className="text-white text-base" />
-                  </div>
-                  <div>
-                    <h2 className="text-sm font-bold text-white">University Portal</h2>
-                    <p className="text-white/70 text-[10px]">Join Our Community</p>
-                  </div>
-                </div>
-                
-                <h1 className="text-lg sm:text-xl font-bold text-white mb-2 leading-tight">
-                  Create Account
-                </h1>
-                <p className="text-white/80 text-xs">
-                  Start your academic journey with us
-                </p>
-              </div>
-
-              {/* Benefits List with React Icons */}
-              <div className="space-y-2 mt-3">
-                {[
-                  { icon: FaGraduationCap, text: "Access all courses" },
-                  { icon: FaBook, text: "Digital library" },
-                  { icon: FaUserTie, text: "Expert faculty" },
-                  { icon: FaChartLine, text: "Career services" }
-                ].map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="bg-white/10 w-6 h-6 rounded-md flex items-center justify-center">
-                      <benefit.icon className="text-blue-200 text-xs" />
-                    </div>
-                    <span className="text-white/90 text-xs">{benefit.text}</span>
-                  </div>
-                ))}
-              </div>
-
-              {/* Already have account link */}
-              <div className="mt-auto pt-5">
-                <Link
-                  to="/signin"
-                  className="block text-center text-xs text-blue-200 hover:text-white transition-colors duration-200 hover:underline"
-                >
-                  Already have an account? Sign In
-                </Link>
-              </div>
-            </motion.div>
-
-            {/* Right Column - Form */}
+            {/* Form Container */}
             <motion.div
               variants={containerVariants}
               initial="hidden"
               animate="visible"
-              className="p-4 lg:p-5"
+              className="p-6 sm:p-8"
             >
               {/* Form Header */}
               <motion.div
                 variants={itemVariants}
-                className="text-center mb-4"
+                className="text-center mb-6"
               >
-                <div className="flex items-center justify-center gap-2 mb-2">
-                  <FaUserPlus className="text-[#344F9F] text-base" />
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    Sign Up
-                  </h2>
+                <div className="flex flex-col items-center justify-center mb-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-[#344F9F] to-blue-600 rounded-xl flex items-center justify-center mb-3 shadow-lg">
+                    <FaUserPlus className="text-white text-lg" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-gray-900">
+                    Create Agency Account
+                  </h1>
+                  <p className="text-gray-600 text-sm mt-1">
+                    Register as agency administrator
+                  </p>
                 </div>
-                <p className="text-gray-600 text-xs">
-                  Create your student account
-                </p>
               </motion.div>
 
               {/* Compact Form */}
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Name Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    FULL NAME
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Full Name
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaSignature className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaSignature className="text-sm" />
                     </div>
                     <input
                       type="text"
@@ -328,7 +321,7 @@ const SignUp = () => {
                       value={formData.name}
                       onChange={handleChange}
                       placeholder="John Doe"
-                      className={`w-full pl-8 pr-3 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.name 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -341,7 +334,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.name}
                       </motion.p>
@@ -350,21 +343,21 @@ const SignUp = () => {
                 </motion.div>
 
                 {/* Email Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    EMAIL
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Email Address
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaEnvelope className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaEnvelope className="text-sm" />
                     </div>
                     <input
                       type="email"
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder="student@university.edu"
-                      className={`w-full pl-8 pr-3 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      placeholder="admin@agency.com"
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.email 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -377,7 +370,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.email}
                       </motion.p>
@@ -386,13 +379,13 @@ const SignUp = () => {
                 </motion.div>
 
                 {/* Password Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    PASSWORD
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Password
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaLock className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaLock className="text-sm" />
                     </div>
                     <input
                       type={showPassword ? "text" : "password"}
@@ -400,7 +393,7 @@ const SignUp = () => {
                       value={formData.password}
                       onChange={handleChange}
                       placeholder="Create a strong password"
-                      className={`w-full pl-8 pr-8 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      className={`w-full pl-10 pr-10 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.password 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -409,9 +402,9 @@ const SignUp = () => {
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#344F9F] transition-colors duration-200 p-0.5"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#344F9F] transition-colors duration-200 p-1"
                     >
-                      {showPassword ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
+                      {showPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                     </button>
                   </div>
                   <AnimatePresence>
@@ -420,7 +413,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.password}
                       </motion.p>
@@ -429,13 +422,13 @@ const SignUp = () => {
                 </motion.div>
 
                 {/* Confirm Password Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    CONFIRM PASSWORD
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Confirm Password
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaLock className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaLock className="text-sm" />
                     </div>
                     <input
                       type={showConfirmPassword ? "text" : "password"}
@@ -443,7 +436,7 @@ const SignUp = () => {
                       value={formData.confirmPassword}
                       onChange={handleChange}
                       placeholder="Confirm your password"
-                      className={`w-full pl-8 pr-8 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      className={`w-full pl-10 pr-10 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.confirmPassword 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -452,9 +445,9 @@ const SignUp = () => {
                     <button
                       type="button"
                       onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                      className="absolute right-2.5 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#344F9F] transition-colors duration-200 p-0.5"
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-[#344F9F] transition-colors duration-200 p-1"
                     >
-                      {showConfirmPassword ? <FaEyeSlash className="text-xs" /> : <FaEye className="text-xs" />}
+                      {showConfirmPassword ? <FaEyeSlash className="text-sm" /> : <FaEye className="text-sm" />}
                     </button>
                   </div>
                   <AnimatePresence>
@@ -463,7 +456,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.confirmPassword}
                       </motion.p>
@@ -472,13 +465,13 @@ const SignUp = () => {
                 </motion.div>
 
                 {/* Phone Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    PHONE
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Phone Number
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaPhone className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaPhone className="text-sm" />
                     </div>
                     <input
                       type="tel"
@@ -486,7 +479,7 @@ const SignUp = () => {
                       value={formData.phone}
                       onChange={handleChange}
                       placeholder="+1 (555) 123-4567"
-                      className={`w-full pl-8 pr-3 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.phone 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -499,7 +492,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.phone}
                       </motion.p>
@@ -507,22 +500,22 @@ const SignUp = () => {
                   </AnimatePresence>
                 </motion.div>
 
-                {/* Company/Institution Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    INSTITUTION
+                {/* Company Name Field */}
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Company Name
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaBuilding className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaBuilding className="text-sm" />
                     </div>
                     <input
                       type="text"
                       name="companyName"
                       value={formData.companyName}
                       onChange={handleChange}
-                      placeholder="University/Company name"
-                      className={`w-full pl-8 pr-3 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      placeholder="Your agency/company name"
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.companyName 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -535,7 +528,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.companyName}
                       </motion.p>
@@ -544,13 +537,13 @@ const SignUp = () => {
                 </motion.div>
 
                 {/* Address Field */}
-                <motion.div variants={itemVariants} className="space-y-1">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                    ADDRESS
+                <motion.div variants={itemVariants} className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Address
                   </label>
                   <div className="relative">
-                    <div className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400">
-                      <FaMapMarkerAlt className="text-xs" />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                      <FaMapMarkerAlt className="text-sm" />
                     </div>
                     <input
                       type="text"
@@ -558,7 +551,7 @@ const SignUp = () => {
                       value={formData.address}
                       onChange={handleChange}
                       placeholder="Your complete address"
-                      className={`w-full pl-8 pr-3 py-2 bg-gray-50 border rounded-md focus:outline-none focus:ring-1 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 text-xs ${
+                      className={`w-full pl-10 pr-4 py-3 bg-gray-50 border rounded-lg focus:outline-none focus:ring-2 focus:ring-[#344F9F]/30 focus:border-transparent transition-all duration-200 text-gray-900 placeholder-gray-500 ${
                         errors.address 
                           ? "border-red-300 focus:ring-red-300/30" 
                           : "border-gray-300 hover:border-gray-400"
@@ -571,7 +564,7 @@ const SignUp = () => {
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: "auto" }}
                         exit={{ opacity: 0, height: 0 }}
-                        className="text-red-500 text-[10px] mt-0.5"
+                        className="text-red-500 text-xs mt-1"
                       >
                         {errors.address}
                       </motion.p>
@@ -582,26 +575,26 @@ const SignUp = () => {
                 {/* Terms Agreement */}
                 <motion.div
                   variants={itemVariants}
-                  className="flex items-start space-x-2 p-2 bg-gray-50 rounded-md border border-gray-200"
+                  className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
                 >
-                  <div className="flex items-center h-5">
+                  <div className="flex items-center h-5 mt-0.5">
                     <input
                       id="agreeTerms"
                       name="agreeTerms"
                       type="checkbox"
                       checked={formData.agreeTerms}
                       onChange={handleChange}
-                      className="w-3 h-3 text-[#344F9F] bg-gray-100 border-gray-300 rounded focus:ring-[#344F9F]/20"
+                      className="w-4 h-4 text-[#344F9F] bg-white border-gray-300 rounded focus:ring-[#344F9F]/20"
                     />
                   </div>
                   <div className="flex-1">
-                    <label htmlFor="agreeTerms" className="text-xs text-gray-700 cursor-pointer">
+                    <label htmlFor="agreeTerms" className="text-sm text-gray-700 cursor-pointer">
                       I agree to the{" "}
-                      <Link to="/terms" className="text-[#344F9F] hover:text-blue-600 hover:underline">
+                      <Link to="/terms" className="text-[#344F9F] hover:text-blue-600 hover:underline font-medium">
                         Terms of Service
                       </Link>{" "}
                       and{" "}
-                      <Link to="/privacy" className="text-[#344F9F] hover:text-blue-600 hover:underline">
+                      <Link to="/privacy" className="text-[#344F9F] hover:text-blue-600 hover:underline font-medium">
                         Privacy Policy
                       </Link>
                     </label>
@@ -611,7 +604,7 @@ const SignUp = () => {
                           initial={{ opacity: 0, height: 0 }}
                           animate={{ opacity: 1, height: "auto" }}
                           exit={{ opacity: 0, height: 0 }}
-                          className="text-red-500 text-[10px] mt-0.5"
+                          className="text-red-500 text-xs mt-1"
                         >
                           {errors.agreeTerms}
                         </motion.p>
@@ -620,54 +613,70 @@ const SignUp = () => {
                   </div>
                 </motion.div>
 
+                {/* Password Requirements */}
+                <motion.div
+                  variants={itemVariants}
+                  className="p-3 bg-blue-50 rounded-lg border border-blue-100"
+                >
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Password Requirements:
+                  </p>
+                  <ul className="text-xs text-gray-600 space-y-1">
+                    <li className="flex items-center">
+                      <FaCheckCircle className="text-green-500 mr-2 text-xs" />
+                      At least 6 characters
+                    </li>
+                    <li className="flex items-center">
+                      <FaCheckCircle className="text-green-500 mr-2 text-xs" />
+                      One uppercase letter (A-Z)
+                    </li>
+                    <li className="flex items-center">
+                      <FaCheckCircle className="text-green-500 mr-2 text-xs" />
+                      One number (0-9)
+                    </li>
+                  </ul>
+                </motion.div>
+
                 {/* Sign Up Button */}
                 <motion.button
                   variants={itemVariants}
                   whileHover={{ scale: 1.01 }}
                   whileTap={{ scale: 0.99 }}
                   type="submit"
-                  disabled={isLoading}
-                  className={`w-full py-2 px-4 bg-gradient-to-r from-[#1a365d] to-[#344F9F] text-white font-semibold rounded-md transition-all duration-200 text-xs hover:shadow-sm ${
-                    isLoading
+                  disabled={isLoading || authLoading}
+                  className={`w-full py-3 px-4 bg-gradient-to-r from-[#344F9F] to-blue-600 text-white font-semibold rounded-lg transition-all duration-200 hover:shadow-lg ${
+                    isLoading || authLoading
                       ? "opacity-90 cursor-not-allowed"
-                      : "hover:from-[#344F9F] hover:to-[#1a365d]"
+                      : "hover:from-blue-600 hover:to-[#344F9F]"
                   }`}
                 >
-                  {isLoading ? (
+                  {isLoading || authLoading ? (
                     <div className="flex items-center justify-center">
-                      <div className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin mr-1.5"></div>
+                      <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
                       Creating Account...
                     </div>
                   ) : (
-                    <span className="flex items-center justify-center gap-1.5">
-                      <FaUserPlus className="text-[10px]" />
+                    <span className="flex items-center justify-center gap-2">
+                      <FaUserPlus className="text-sm" />
                       CREATE ACCOUNT
                     </span>
                   )}
                 </motion.button>
 
-                {/* Password Requirements */}
+                {/* Already have account link */}
                 <motion.div
                   variants={itemVariants}
-                  className="p-2 bg-blue-50 rounded-md border border-blue-100"
+                  className="text-center pt-2"
                 >
-                  <p className="text-xs font-medium text-gray-700 mb-1">
-                    Password must contain:
+                  <p className="text-sm text-gray-600">
+                    Already have an account?{" "}
+                    <Link
+                      to="/signin"
+                      className="text-[#344F9F] hover:text-blue-600 font-medium hover:underline transition-colors duration-200"
+                    >
+                      Sign In
+                    </Link>
                   </p>
-                  <ul className="text-[10px] text-gray-600 space-y-0.5">
-                    <li className="flex items-center">
-                      <FaCheckCircle className="text-green-500 mr-1 text-[8px]" />
-                      At least 6 characters
-                    </li>
-                    <li className="flex items-center">
-                      <FaCheckCircle className="text-green-500 mr-1 text-[8px]" />
-                      One uppercase letter (A-Z)
-                    </li>
-                    <li className="flex items-center">
-                      <FaCheckCircle className="text-green-500 mr-1 text-[8px]" />
-                      One number (0-9)
-                    </li>
-                  </ul>
                 </motion.div>
               </form>
             </motion.div>
@@ -678,20 +687,20 @@ const SignUp = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.3 }}
-            className="text-center mt-3 pt-3 border-t border-gray-200/30"
+            className="text-center mt-6 pt-4 border-t border-gray-200/50"
           >
-            <p className="text-[10px] text-gray-400">
-              © {new Date().getFullYear()} University Portal
+            <p className="text-xs text-gray-500">
+              © {new Date().getFullYear()} Agency Portal. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center gap-2 mt-1">
-              <Link to="/privacy" className="text-[10px] text-gray-500 hover:text-[#344F9F] hover:underline">
-                Privacy
+            <div className="flex flex-wrap justify-center gap-3 mt-2">
+              <Link to="/privacy" className="text-xs text-gray-500 hover:text-[#344F9F] hover:underline">
+                Privacy Policy
               </Link>
-              <Link to="/terms" className="text-[10px] text-gray-500 hover:text-[#344F9F] hover:underline">
-                Terms
+              <Link to="/terms" className="text-xs text-gray-500 hover:text-[#344F9F] hover:underline">
+                Terms of Service
               </Link>
-              <Link to="/contact" className="text-[10px] text-gray-500 hover:text-[#344F9F] hover:underline">
-                Contact
+              <Link to="/contact" className="text-xs text-gray-500 hover:text-[#344F9F] hover:underline">
+                Contact Us
               </Link>
             </div>
           </motion.div>

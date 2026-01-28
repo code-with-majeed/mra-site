@@ -56,6 +56,17 @@ const Table = ({ headers, rows }) => (
 const Modules = () => {
   return (
     <div className="bg-gray-100 p-3 sm:p-4 min-h-screen animate-fadeIn">
+      {/* Professional heading with animated underline */}
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 relative inline-block group">
+          Modules
+          {/* Professional underline - always visible with hover effect */}
+          <span className="absolute -bottom-1 left-0 w-0 h-1 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+          {/* Static underline base */}
+          <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gray-200"></span>
+        </h2>
+      </div>
+
       {/* Top Search Bar */}
       <div className="bg-white border rounded-md mb-4 p-2 sm:p-3 flex flex-col sm:flex-row items-center justify-between gap-2 sm:gap-0 transition-all duration-300 hover:shadow-md">
         <div className="w-full sm:flex-1 sm:mr-4">

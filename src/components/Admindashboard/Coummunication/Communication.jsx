@@ -32,8 +32,19 @@ const Communication = () => {
 
   return (
     <div className="bg-gray-100 p-4 md:p-6 min-h-screen animate-fadeIn">
-      {/* Header Tabs */}
+      {/* Professional heading with animated underline */}
+      <div className="mb-4 sm:mb-6">
+        <h2 className="text-xl sm:text-2xl font-bold text-gray-800 relative inline-block group">
+          Communication
+          {/* Professional underline - always visible with hover effect */}
+          <span className="absolute -bottom-1 left-0 w-0 h-1 bg-blue-600 transition-all duration-300 group-hover:w-full"></span>
+          {/* Static underline base */}
+          <span className="absolute -bottom-1 left-0 w-full h-0.5 bg-gray-200"></span>
+        </h2>
+      </div>
+
       <div className="bg-white rounded-lg shadow-lg transition-all duration-300 transform hover:shadow-xl">
+        {/* Header Tabs */}
         <div className="flex flex-col sm:flex-row">
           <button className="flex-1 bg-blue-600 text-white py-3 px-4 sm:rounded-tl-lg font-semibold transition-all duration-300 hover:bg-blue-700 transform hover:-translate-y-0.5">
             View all students
